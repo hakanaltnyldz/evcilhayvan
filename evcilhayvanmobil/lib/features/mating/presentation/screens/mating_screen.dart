@@ -1,63 +1,37 @@
 // lib/features/mating/presentation/screens/mating_screen.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:evcilhayvanmobil/core/theme/app_palette.dart';
 import 'package:evcilhayvanmobil/core/widgets/modern_background.dart';
+import 'package:evcilhayvanmobil/features/mating/data/repositories/mating_repository.dart';
+import 'package:evcilhayvanmobil/features/mating/domain/models/mating_profile.dart';
 
-class MatingScreen extends StatefulWidget {
+class MatingScreen extends ConsumerStatefulWidget {
   const MatingScreen({super.key});
 
   @override
-  State<MatingScreen> createState() => _MatingScreenState();
+  ConsumerState<MatingScreen> createState() => _MatingScreenState();
 }
 
-class _MatingScreenState extends State<MatingScreen> {
+class _MatingScreenState extends ConsumerState<MatingScreen> {
   final List<String> _species = const ['Tümü', 'Köpek', 'Kedi', 'Kuş'];
   String _selectedSpecies = 'Tümü';
   String _selectedGender = 'Tümü';
   double _maxDistance = 20;
-
-  final List<_MatingProfile> _profiles = const [
-    _MatingProfile(
-      name: 'Milo',
-      breed: 'Golden Retriever',
-      gender: 'Erkek',
-      distance: 4,
-      age: '2 yaş',
-      imageUrl:
-          'https://images.unsplash.com/photo-1558944351-c1f4588d39c5?auto=format&fit=crop&w=400&q=80',
-    ),
-    _MatingProfile(
-      name: 'Luna',
-      breed: 'British Shorthair',
-      gender: 'Dişi',
-      distance: 8,
-      age: '1.5 yaş',
-      imageUrl:
-          'https://images.unsplash.com/photo-1518791841217-8f162f1e1131?auto=format&fit=crop&w=400&q=80',
-    ),
-    _MatingProfile(
-      name: 'Zuzu',
-      breed: 'Muhabbet Kuşu',
-      gender: 'Erkek',
-      distance: 2,
-      age: '8 aylık',
-      imageUrl:
-          'https://images.unsplash.com/photo-1501700493788-fa1a4fc9fe62?auto=format&fit=crop&w=400&q=80',
-    ),
-  ];
+  final Set<String> _requestingProfiles = <String>{};
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final filtered = _profiles.where((profile) {
-      final matchesSpecies =
-          _selectedSpecies == 'Tümü' || profile.species == _selectedSpecies;
-      final matchesGender =
-          _selectedGender == 'Tümü' || profile.gender == _selectedGender;
-      final matchesDistance = profile.distance <= _maxDistance;
-      return matchesSpecies && matchesGender && matchesDistance;
-    }).toList();
+    final filters = MatingQuery(
+      species: _selectedSpecies == 'Tümü' ? null : _selectedSpecies,
+      gender: _selectedGender == 'Tümü' ? null : _selectedGender,
+      maxDistanceKm: _maxDistance,
+    );
+
+    final profilesAsync = ref.watch(matingProfilesProvider(filters));
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -116,20 +90,119 @@ class _MatingScreenState extends State<MatingScreen> {
                 ),
                 const SizedBox(height: 12),
                 Expanded(
-                  child: filtered.isEmpty
-                      ? const _EmptyState()
-                      : ListView.builder(
+                  child: profilesAsync.when(
+                    loading: () => const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                    error: (error, stackTrace) => _ErrorState(
+                      message: error.toString(),
+                      onRetry: () => ref.invalidate(matingProfilesProvider(filters)),
+                    ),
+                    data: (profiles) {
+                      final filtered = profiles.where((profile) {
+                        final matchesSpecies = _selectedSpecies == 'Tümü' ||
+                            profile.species == _selectedSpecies;
+                        final matchesGender = _selectedGender == 'Tümü' ||
+                            profile.gender == _selectedGender;
+                        final matchesDistance =
+                            profile.distanceKm <= _maxDistance;
+                        return matchesSpecies &&
+                            matchesGender &&
+                            matchesDistance;
+                      }).toList();
+
+                      if (filtered.isEmpty) {
+                        return const _EmptyState();
+                      }
+
+                      return RefreshIndicator(
+                        onRefresh: () async {
+                          ref.invalidate(matingProfilesProvider(filters));
+                          try {
+                            await ref.read(
+                              matingProfilesProvider(filters).future,
+                            );
+                          } catch (_) {}
+                        },
+                        child: ListView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(),
                           itemCount: filtered.length,
                           itemBuilder: (context, index) {
                             final profile = filtered[index];
-                            return _ProfileCard(profile: profile);
+                            final isRequesting =
+                                _requestingProfiles.contains(profile.id);
+                            return _ProfileCard(
+                              profile: profile,
+                              isRequesting: isRequesting,
+                              onDetails: () => _openDetails(profile),
+                              onRequestMatch: () =>
+                                  _requestMatch(profile, filters: filters),
+                            );
                           },
                         ),
+                      );
+                    },
+                  ),
                 ),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Future<void> _openDetails(MatingProfile profile) async {
+    if (!mounted) return;
+    if (profile.petId.isEmpty) {
+      _showSnackBar('İlan detayı açılamadı.', isError: true);
+      return;
+    }
+    context.pushNamed(
+      'pet-detail',
+      pathParameters: {'id': profile.petId},
+    );
+  }
+
+  Future<void> _requestMatch(
+    MatingProfile profile, {
+    required MatingQuery filters,
+  }) async {
+    if (_requestingProfiles.contains(profile.id)) {
+      return;
+    }
+    setState(() {
+      _requestingProfiles.add(profile.id);
+    });
+
+    final repository = ref.read(matingRepositoryProvider);
+    try {
+      final targetId = profile.id.isNotEmpty ? profile.id : profile.petId;
+      final result = await repository.sendMatchRequest(targetId);
+      if (!mounted) return;
+      _showSnackBar(result.message, isError: !result.success);
+      if (result.success || result.didMatch) {
+        ref.invalidate(matingProfilesProvider(filters));
+      }
+    } catch (e) {
+      if (!mounted) return;
+      _showSnackBar(e.toString(), isError: true);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _requestingProfiles.remove(profile.id);
+        });
+      }
+    }
+  }
+
+  void _showSnackBar(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError
+            ? Theme.of(context).colorScheme.error
+            : Theme.of(context).colorScheme.primary,
       ),
     );
   }
@@ -190,9 +263,17 @@ class _FilterChips extends StatelessWidget {
 }
 
 class _ProfileCard extends StatelessWidget {
-  final _MatingProfile profile;
+  final MatingProfile profile;
+  final bool isRequesting;
+  final VoidCallback onDetails;
+  final VoidCallback onRequestMatch;
 
-  const _ProfileCard({required this.profile});
+  const _ProfileCard({
+    required this.profile,
+    required this.isRequesting,
+    required this.onDetails,
+    required this.onRequestMatch,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -218,12 +299,7 @@ class _ProfileCard extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-            child: Image.network(
-              profile.imageUrl,
-              height: 180,
-              width: double.infinity,
-              fit: BoxFit.cover,
-            ),
+            child: _ProfileImage(imageUrl: profile.primaryImageUrl),
           ),
           Padding(
             padding: const EdgeInsets.all(18.0),
@@ -260,7 +336,7 @@ class _ProfileCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '${profile.breed} · ${profile.age}',
+                  '${profile.breed} · ${profile.formattedAge}',
                   style: theme.textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 8),
@@ -270,7 +346,7 @@ class _ProfileCard extends StatelessWidget {
                         size: 18, color: theme.colorScheme.primary),
                     const SizedBox(width: 6),
                     Text(
-                      '${profile.distance} km yakınında',
+                      '${profile.distanceKmRounded} km yakınında',
                       style: theme.textTheme.bodySmall,
                     ),
                   ],
@@ -280,7 +356,7 @@ class _ProfileCard extends StatelessWidget {
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: () {},
+                        onPressed: onDetails,
                         icon: const Icon(Icons.info_outline),
                         label: const Text('Detaylar'),
                       ),
@@ -288,9 +364,27 @@ class _ProfileCard extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: FilledButton.icon(
-                        onPressed: () {},
-                        icon: const Icon(Icons.favorite_outline),
-                        label: const Text('Eşleşme iste'),
+                        onPressed: isRequesting || profile.hasPendingRequest
+                            ? null
+                            : onRequestMatch,
+                        icon: isRequesting
+                            ? const SizedBox(
+                                height: 16,
+                                width: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor:
+                                      AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              )
+                            : const Icon(Icons.favorite_outline),
+                        label: Text(
+                          profile.hasPendingRequest
+                              ? 'İstek gönderildi'
+                              : profile.isMatched
+                                  ? 'Eşleşti'
+                                  : 'Eşleşme iste',
+                        ),
                       ),
                     ),
                   ],
@@ -331,27 +425,93 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-class _MatingProfile {
-  final String name;
-  final String breed;
-  final String gender;
-  final double distance;
-  final String age;
+class _ErrorState extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+
+  const _ErrorState({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.error_outline,
+                size: 60, color: theme.colorScheme.error),
+            const SizedBox(height: 16),
+            Text(
+              'Bir sorun oluştu',
+              style: theme.textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              style: theme.textTheme.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: onRetry,
+              child: const Text('Tekrar Dene'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileImage extends StatelessWidget {
   final String imageUrl;
 
-  const _MatingProfile({
-    required this.name,
-    required this.breed,
-    required this.gender,
-    required this.distance,
-    required this.age,
-    required this.imageUrl,
-  });
+  const _ProfileImage({required this.imageUrl});
 
-  String get species {
-    if (breed.toLowerCase().contains('köpek')) return 'Köpek';
-    if (breed.toLowerCase().contains('kedi')) return 'Kedi';
-    if (breed.toLowerCase().contains('kuş')) return 'Kuş';
-    return 'Tümü';
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    if (imageUrl.isEmpty) {
+      return _placeholder(theme);
+    }
+
+    return Image.network(
+      imageUrl,
+      height: 180,
+      width: double.infinity,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) => _placeholder(theme),
+      loadingBuilder: (context, child, progress) {
+        if (progress == null) return child;
+        return Container(
+          height: 180,
+          width: double.infinity,
+          color: theme.colorScheme.surfaceVariant,
+          alignment: Alignment.center,
+          child: CircularProgressIndicator(
+            value: progress.expectedTotalBytes != null
+                ? progress.cumulativeBytesLoaded /
+                    progress.expectedTotalBytes!
+                : null,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _placeholder(ThemeData theme) {
+    return Container(
+      height: 180,
+      width: double.infinity,
+      color: theme.colorScheme.surfaceVariant,
+      alignment: Alignment.center,
+      child: Icon(
+        Icons.pets,
+        size: 48,
+        color: theme.colorScheme.onSurface.withOpacity(0.5),
+      ),
+    );
   }
 }
