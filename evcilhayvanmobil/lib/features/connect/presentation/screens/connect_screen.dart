@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:evcilhayvanmobil/core/http.dart';
+import 'package:evcilhayvanmobil/core/theme/app_palette.dart';
 import 'package:evcilhayvanmobil/core/widgets/modern_background.dart';
 import 'package:evcilhayvanmobil/features/auth/data/repositories/auth_repository.dart';
 import 'package:evcilhayvanmobil/features/messages/data/repositories/message_repository.dart';
@@ -136,8 +137,8 @@ class _UserCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(30),
         gradient: LinearGradient(
           colors: [
-            theme.colorScheme.surface,
-            theme.colorScheme.secondaryContainer.withOpacity(0.7),
+            AppPalette.heroGradient.first.withOpacity(0.12),
+            AppPalette.heroGradient.last.withOpacity(0.18),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -149,6 +150,9 @@ class _UserCard extends StatelessWidget {
             offset: const Offset(0, 14),
           ),
         ],
+        border: Border.all(
+          color: theme.colorScheme.primary.withOpacity(0.06),
+        ),
       ),
       child: Stack(
         children: [
@@ -244,8 +248,8 @@ class _ConnectHero extends StatelessWidget {
         borderRadius: BorderRadius.circular(32),
         gradient: LinearGradient(
           colors: [
-            theme.colorScheme.primary.withOpacity(0.16),
-            theme.colorScheme.secondary.withOpacity(0.24),
+            AppPalette.heroGradient.first.withOpacity(0.3),
+            AppPalette.heroGradient.last.withOpacity(0.32),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -329,18 +333,27 @@ class _HeroTag extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: theme.colorScheme.primary.withOpacity(0.12),
+        gradient: LinearGradient(
+          colors: AppPalette.accentGradient,
+        ),
         borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppPalette.secondary.withOpacity(0.22),
+            blurRadius: 14,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 18, color: theme.colorScheme.primary),
+          Icon(icon, size: 18, color: Colors.white),
           const SizedBox(width: 6),
           Text(
             label,
             style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.primary,
+              color: Colors.white,
               fontWeight: FontWeight.w600,
             ),
           ),
