@@ -2,8 +2,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:evcilhayvanmobil/features/auth/data/repositories/auth_repository.dart';
 import 'package:go_router/go_router.dart';
+
+import 'package:evcilhayvanmobil/core/widgets/modern_background.dart';
+import 'package:evcilhayvanmobil/features/auth/data/repositories/auth_repository.dart';
 
 import '../../domain/user_model.dart';
 
@@ -38,14 +40,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final authRepo = ref.read(authRepositoryProvider);
       final email = _emailController.text;
       final user = await authRepo.login(email, _passwordController.text);
-      
-      // --- GÜNCELLEME BURADA (KİLİTLENME HATASI ÇÖZÜMÜ) ---
-      // SADECE state'i güncelle. Yönlendirmeyi 'ref.listen' yapacak.
       ref.read(authProvider.notifier).loginSuccess(user);
-      // --- GÜNCELLEME BİTTİ ---
-
     } on VerificationRequiredException catch (e) {
-      setState(() { _errorMessage = e.message; });
+      setState(() {
+        _errorMessage = e.message;
+      });
       if (mounted) context.pushNamed('verify-email', extra: e.email);
     } catch (e) {
       setState(() {
@@ -72,101 +71,117 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     context.pushNamed('forgot-password');
   }
 
-
   @override
   Widget build(BuildContext context) {
-    // --- YENİ EKLENEN KISIM (STATE DİNLEYİCİ) ---
-    // Bu, donma hatasını çözer.
-    // authProvider'ı dinler.
     ref.listen<User?>(authProvider, (previous, next) {
-      // Eğer state 'null' değilse (yani bir kullanıcıya dönüştüyse)
       if (next != null) {
-        // Ana sayfaya ('/') git.
-        // pushReplacementNamed kullanarak login ekranını yığından kaldır.
         context.pushReplacementNamed('home');
       }
     });
-    // --- DİNLEYİCİ BİTTİ ---
+
+    final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Giriş Yap'),
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column( 
-            children: [
-              const SizedBox(height: 60),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  TextField(
-                    controller: _emailController,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.emailAddress,
+      extendBodyBehindAppBar: true,
+      body: ModernBackground(
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Card(
+                  elevation: 12,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(28),
                   ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _passwordController,
-                    decoration: const InputDecoration(
-                      labelText: 'Şifre',
-                      border: OutlineInputBorder(),
+                  child: Padding(
+                    padding: const EdgeInsets.all(28.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Tekrar hoş geldin! 👋',
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Evcil dostlar dünyasına giriş yap ve topluluğa katıl.',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        TextField(
+                          controller: _emailController,
+                          decoration: const InputDecoration(
+                            labelText: 'Email',
+                            prefixIcon: Icon(Icons.mail_outline),
+                          ),
+                          keyboardType: TextInputType.emailAddress,
+                        ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: _passwordController,
+                          decoration: const InputDecoration(
+                            labelText: 'Şifre',
+                            prefixIcon: Icon(Icons.lock_outline),
+                          ),
+                          obscureText: true,
+                        ),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: _goToForgotPassword,
+                            child: const Text('Şifremi Unuttum?'),
+                          ),
+                        ),
+                        if (_errorMessage != null) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            _errorMessage!,
+                            style: const TextStyle(color: Colors.redAccent),
+                          ),
+                        ],
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 54,
+                          child: FilledButton(
+                            onPressed: _isLoading ? null : _login,
+                            child: _isLoading
+                                ? const CircularProgressIndicator(
+                                    color: Colors.white,
+                                  )
+                                : const Text('Giriş Yap'),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        OutlinedButton.icon(
+                          onPressed: _loginAsGuest,
+                          icon: const Icon(Icons.visibility_off),
+                          label: const Text('Misafir olarak göz at'),
+                        ),
+                        const SizedBox(height: 24),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text('Hesabın yok mu?'),
+                            TextButton(
+                              onPressed: _goToRegister,
+                              child: const Text('Üye ol'),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    obscureText: true,
                   ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: _goToForgotPassword,
-                        child: const Text('Şifremi Unuttum?'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  if (_errorMessage != null)
-                    Text(
-                      _errorMessage!,
-                      style: const TextStyle(color: Colors.red, fontSize: 16),
-                      textAlign: TextAlign.center,
-                    ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _login,
-                      child: _isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text('Giriş Yap', style: TextStyle(fontSize: 18)),
-                    ),
-                  ),
-                ],
+                ),
               ),
-              const SizedBox(height: 60), 
-              Column(
-                children: [
-                  const Text("veya"),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton(
-                      onPressed: _loginAsGuest,
-                      child: const Text('Misafir olarak giriş yap'),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  TextButton(
-                    onPressed: _goToRegister,
-                    child: const Text('Hesabın yok mu? Üye Ol'),
-                  ),
-                ],
-              ),
-            ],
+            ),
           ),
         ),
       ),

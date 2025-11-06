@@ -78,4 +78,26 @@ class MessageRepository {
       throw Exception('Mesaj gönderilemedi: ${e.response?.data['message']}');
     }
   }
+
+  Future<Conversation> createOrGetConversation({
+    required String participantId,
+    required String currentUserId,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/api/conversations',
+        data: {'participantId': participantId},
+      );
+
+      final data = response.data['conversation'] as Map<String, dynamic>;
+      return Conversation.fromJson(
+        data,
+        currentUserId,
+      );
+    } on DioException catch (e) {
+      throw Exception(
+        'Sohbet başlatılamadı: ${e.response?.data['message'] ?? e.message}',
+      );
+    }
+  }
 }
