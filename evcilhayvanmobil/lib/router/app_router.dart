@@ -121,11 +121,21 @@ final router = GoRouter(
       name: 'chat',
       builder: (context, state) {
         final String convId = state.pathParameters['conversationId']!;
-        final String receiverName =
-            (state.extra is String) ? state.extra as String : "Kullanıcı";
+        String receiverName = 'Kullanıcı';
+        String? avatarUrl;
+
+        final extra = state.extra;
+        if (extra is Map<String, dynamic>) {
+          receiverName = extra['name'] as String? ?? receiverName;
+          avatarUrl = extra['avatar'] as String?;
+        } else if (extra is String) {
+          receiverName = extra;
+        }
+
         return ChatScreen(
           conversationId: convId,
-          receiverName: receiverName, conservationId: '',
+          receiverName: receiverName,
+          receiverAvatarUrl: avatarUrl,
         );
       },
     ),

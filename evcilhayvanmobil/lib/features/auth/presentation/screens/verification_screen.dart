@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import 'package:evcilhayvanmobil/core/widgets/modern_background.dart';
 import 'package:evcilhayvanmobil/features/auth/data/repositories/auth_repository.dart';
 
 import '../../domain/user_model.dart';
@@ -28,7 +30,10 @@ class _VerificationScreenState extends ConsumerState<VerificationScreen> {
 
   Future<void> _verifyCode() async {
     if (!_formKey.currentState!.validate() || _isLoading) return;
-    setState(() { _isLoading = true; _errorMessage = null; });
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
     try {
       final authRepo = ref.read(authRepositoryProvider);
       final user = await authRepo.verifyEmail(
@@ -37,73 +42,121 @@ class _VerificationScreenState extends ConsumerState<VerificationScreen> {
       );
       ref.read(authProvider.notifier).loginSuccess(user);
     } catch (e) {
-      setState(() { _errorMessage = e.toString().replaceFirst('Exception: ', ''); });
+      setState(() {
+        _errorMessage = e.toString().replaceFirst('Exception: ', '');
+      });
     } finally {
-      if (mounted) { setState(() { _isLoading = false; }); }
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     ref.listen<User?>(authProvider, (previous, next) {
-      if (next != null) { context.pushReplacementNamed('home'); }
+      if (next != null) {
+        context.pushReplacementNamed('home');
+      }
     });
+
+    final theme = Theme.of(context);
+
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Hesabı Doğrula'),
+        backgroundColor: Colors.transparent,
       ),
-      // --- ÇÖZÜM: SingleChildScrollView eklendi ---
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const SizedBox(height: 60), // Üstten boşluk
-                Text(
-                  '${widget.email} adresine gönderilen 6 haneli doğrulama kodunu girin.',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 24),
-                TextFormField(
-                  controller: _codeController,
-                  decoration: const InputDecoration(labelText: 'Doğrulama Kodu', border: OutlineInputBorder(), counterText: ""),
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  maxLength: 6,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 24, letterSpacing: 12),
-                  validator: (value) => (value?.length != 6) ? 'Lütfen 6 haneli kodu girin' : null,
-                ),
-                const SizedBox(height: 24),
-                if (_errorMessage != null)
-                  Text(_errorMessage!, style: const TextStyle(color: Colors.red, fontSize: 16), textAlign: TextAlign.center),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _verifyCode,
-                    child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text('Doğrula ve Giriş Yap', style: TextStyle(fontSize: 18)),
+      body: ModernBackground(
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Card(
+                  elevation: 12,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(28),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(28.0),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Hesabını doğrula',
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            '${widget.email} adresine gönderilen 6 haneli kodu girerek hesabını etkinleştir.',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          TextFormField(
+                            controller: _codeController,
+                            decoration: const InputDecoration(
+                              labelText: 'Doğrulama Kodu',
+                              prefixIcon: Icon(Icons.verified_user_outlined),
+                              counterText: '',
+                            ),
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                            maxLength: 6,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontSize: 24, letterSpacing: 12),
+                            validator: (value) =>
+                                (value?.length != 6) ? 'Lütfen 6 haneli kodu girin' : null,
+                          ),
+                          if (_errorMessage != null) ...[
+                            const SizedBox(height: 12),
+                            Text(
+                              _errorMessage!,
+                              style: const TextStyle(color: Colors.redAccent),
+                            ),
+                          ],
+                          const SizedBox(height: 20),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 54,
+                            child: FilledButton(
+                              onPressed: _isLoading ? null : _verifyCode,
+                              child: _isLoading
+                                  ? const CircularProgressIndicator(color: Colors.white)
+                                  : const Text('Doğrula ve Giriş Yap'),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Center(
+                            child: TextButton(
+                              onPressed: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Kod tekrar gönderildi.')),
+                                );
+                              },
+                              child: const Text('Kodu tekrar gönder'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () { /* TODO: Kodu tekrar gönder */ },
-                  child: const Text('Kodu tekrar gönder'),
-                ),
-                const SizedBox(height: 60), // Alttan boşluk
-              ],
+              ),
             ),
           ),
         ),
       ),
-      // --- ÇÖZÜM BİTTİ ---
     );
   }
 }

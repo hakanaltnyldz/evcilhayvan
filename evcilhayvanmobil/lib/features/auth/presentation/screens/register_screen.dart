@@ -1,8 +1,10 @@
 // lib/features/auth/presentation/screens/register_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:evcilhayvanmobil/features/auth/data/repositories/auth_repository.dart';
 import 'package:go_router/go_router.dart';
+
+import 'package:evcilhayvanmobil/core/widgets/modern_background.dart';
+import 'package:evcilhayvanmobil/features/auth/data/repositories/auth_repository.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -29,7 +31,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   Future<void> _register() async {
     if (_isLoading) return;
-    setState(() { _isLoading = true; _errorMessage = null; });
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
     try {
       final authRepo = ref.read(authRepositoryProvider);
       final email = _emailController.text;
@@ -43,65 +48,129 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         context.pushReplacementNamed('verify-email', extra: email);
       }
     } catch (e) {
-      setState(() { _errorMessage = e.toString().replaceFirst('Exception: ', ''); });
+      setState(() {
+        _errorMessage = e.toString().replaceFirst('Exception: ', '');
+      });
     } finally {
-      if (mounted) { setState(() { _isLoading = false; }); }
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Üye Ol'),
+        backgroundColor: Colors.transparent,
       ),
-      // --- ÇÖZÜM: SingleChildScrollView eklendi ---
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextField(
-                controller: _nameController,
-                decoration: const InputDecoration(labelText: 'İsim Soyisim', border: OutlineInputBorder()),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()),
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _passwordController,
-                decoration: const InputDecoration(labelText: 'Şifre (min 6 karakter)', border: OutlineInputBorder()),
-                obscureText: true,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _cityController,
-                decoration: const InputDecoration(labelText: 'Şehir (Opsiyonel)', border: OutlineInputBorder()),
-              ),
-              const SizedBox(height: 24),
-              if (_errorMessage != null)
-                Text(_errorMessage!, style: const TextStyle(color: Colors.red, fontSize: 16), textAlign: TextAlign.center),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _register,
-                  child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text('Kayıt Ol', style: TextStyle(fontSize: 18)),
+      body: ModernBackground(
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 440),
+                child: Card(
+                  elevation: 12,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(28),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(28.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Yeni bir hesap oluştur',
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Evcil hayvanlarını paylaş ve topluluktan yeni dostlar edin.',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        TextField(
+                          controller: _nameController,
+                          decoration: const InputDecoration(
+                            labelText: 'İsim Soyisim',
+                            prefixIcon: Icon(Icons.person_outline),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: _emailController,
+                          decoration: const InputDecoration(
+                            labelText: 'Email',
+                            prefixIcon: Icon(Icons.mail_outline),
+                          ),
+                          keyboardType: TextInputType.emailAddress,
+                        ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: _passwordController,
+                          decoration: const InputDecoration(
+                            labelText: 'Şifre (min 6 karakter)',
+                            prefixIcon: Icon(Icons.lock_outline),
+                          ),
+                          obscureText: true,
+                        ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: _cityController,
+                          decoration: const InputDecoration(
+                            labelText: 'Şehir (Opsiyonel)',
+                            prefixIcon: Icon(Icons.location_on_outlined),
+                          ),
+                        ),
+                        if (_errorMessage != null) ...[
+                          const SizedBox(height: 12),
+                          Text(
+                            _errorMessage!,
+                            style: const TextStyle(color: Colors.redAccent),
+                          ),
+                        ],
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 54,
+                          child: FilledButton(
+                            onPressed: _isLoading ? null : _register,
+                            child: _isLoading
+                                ? const CircularProgressIndicator(color: Colors.white)
+                                : const Text('Kayıt Ol'),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text('Zaten hesabın var mı?'),
+                            TextButton(
+                              onPressed: () => context.pushReplacementNamed('login'),
+                              child: const Text('Giriş yap'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),
-      // --- ÇÖZÜM BİTTİ ---
     );
   }
 }
