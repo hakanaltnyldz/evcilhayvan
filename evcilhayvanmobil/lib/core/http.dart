@@ -36,22 +36,24 @@ class AuthInterceptor extends Interceptor {
     '/api/auth/forgot-password',
     '/api/auth/reset-password',
     '/api/health',
-    '/api/pets', // Genel ilan listesi (GET)
   ];
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
     // ✅ 1. Public endpoint’leri kontrol et
     bool isPublic = false;
+    final String normalizedPath = Uri.parse(options.path).path;
 
     // Tam eşleşme varsa
-    if (_publicPaths.contains(options.path)) {
+    if (_publicPaths.contains(normalizedPath)) {
       isPublic = true;
     }
 
-    // GET /api/pets/:id gibi dinamik GET rotalarını da public say
-    if (options.path.startsWith('/api/pets') && options.method == 'GET') {
-      isPublic = true;
+    // GET /api/pets ve yalnızca tekil ilan sayfalarını public say
+    if (options.method == 'GET') {
+      if (normalizedPath == '/api/pets' || _isPublicPetDetailPath(normalizedPath)) {
+        isPublic = true;
+      }
     }
 
     // ✅ 2. Public olmayan istekler için token ekle
@@ -72,5 +74,23 @@ class AuthInterceptor extends Interceptor {
       print('⚠️ [HTTP] Token geçersiz veya süresi dolmuş!');
     }
     return super.onError(err, handler);
+  }
+
+  bool _isPublicPetDetailPath(String path) {
+    final uri = Uri.parse(path);
+    final segments = uri.pathSegments;
+
+    if (segments.length != 3) {
+      return false;
+    }
+
+    if (segments[0] != 'api' || segments[1] != 'pets') {
+      return false;
+    }
+
+    const protectedSegments = {'me', 'feed'};
+    final detailSegment = segments[2].toLowerCase();
+
+    return !protectedSegments.contains(detailSegment);
   }
 }
