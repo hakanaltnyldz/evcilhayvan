@@ -7,15 +7,17 @@ class Conversation {
   final String id;
   // Sohbetteki diğer kişi (kendimiz hariç)
   final User otherParticipant; 
-  // Hangi ilan üzerinden eşleşildi
-  final Pet relatedPet; 
+  // Hangi ilan üzerinden eşleşildi (yalnızca ID dönebilir)
+  final Pet? relatedPet;
+  final String? relatedPetId;
   final String lastMessage;
   final DateTime updatedAt;
 
   Conversation({
     required this.id,
     required this.otherParticipant,
-    required this.relatedPet,
+    this.relatedPet,
+    this.relatedPetId,
     required this.lastMessage,
     required this.updatedAt,
   });
@@ -28,10 +30,24 @@ class Conversation {
       orElse: () => participantsJson.first, // Tek kişi varsa (hatalı veri) kendisini al
     );
 
+    final relatedPetData = json['relatedPet'];
+    final String? relatedPetId = (json['relatedPetId'] as String?) ??
+        (relatedPetData is String
+            ? relatedPetData
+            : relatedPetData is Map<String, dynamic>
+                ? relatedPetData['_id'] as String?
+                : null);
+
+    Pet? relatedPet;
+    if (relatedPetData is Map<String, dynamic>) {
+      relatedPet = Pet.fromJson(relatedPetData);
+    }
+
     return Conversation(
       id: json['_id'],
       otherParticipant: User.fromJson(otherParticipantJson),
-      relatedPet: Pet.fromJson(json['relatedPet']),
+      relatedPet: relatedPet,
+      relatedPetId: relatedPetId,
       lastMessage: json['lastMessage'] ?? "Sohbeti Başlatın",
       updatedAt: DateTime.parse(json['updatedAt']),
     );
