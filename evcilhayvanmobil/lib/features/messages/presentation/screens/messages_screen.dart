@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:evcilhayvanmobil/core/http.dart';
 import 'package:evcilhayvanmobil/core/widgets/modern_background.dart';
 import 'package:evcilhayvanmobil/features/messages/data/repositories/message_repository.dart';
 
@@ -54,13 +55,18 @@ class MessagesScreen extends ConsumerWidget {
                                   : 'Sohbete başla',
                               petName: conv.relatedPet.name,
                               updatedAt: conv.updatedAt,
+                              avatarUrl: _resolveAvatarUrl(
+                                conv.otherParticipant.avatarUrl,
+                              ),
                               onTap: () {
                                 context.pushNamed(
                                   'chat',
                                   pathParameters: {'conversationId': conv.id},
                                   extra: {
                                     'name': conv.otherParticipant.name,
-                                    'avatar': conv.otherParticipant.avatarUrl,
+                                    'avatar': _resolveAvatarUrl(
+                                      conv.otherParticipant.avatarUrl,
+                                    ),
                                   },
                                 );
                               },
@@ -88,24 +94,63 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Topluluğunla bağlantıda kal',
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 18),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.primary.withOpacity(0.14),
+            theme.colorScheme.secondary.withOpacity(0.18),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        const SizedBox(height: 8),
-        Text(
-          'Sahiplenme süreçlerini ve yeni eşleşmeleri buradan takip et.',
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Sohbet kutunu renklendir',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Sahiplendirme görüşmelerini, ilan sorularını ve yeni dostlukları burada yönet.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurface.withOpacity(0.75),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
-      ],
+          const SizedBox(width: 16),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: Image.network(
+              'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&w=360&q=80',
+              width: 90,
+              height: 100,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                width: 90,
+                height: 100,
+                color: theme.colorScheme.primary.withOpacity(0.1),
+                child: Icon(
+                  Icons.pets,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -115,6 +160,7 @@ class _ConversationCard extends StatelessWidget {
   final String subtitle;
   final String petName;
   final DateTime updatedAt;
+  final String? avatarUrl;
   final VoidCallback onTap;
 
   const _ConversationCard({
@@ -122,6 +168,7 @@ class _ConversationCard extends StatelessWidget {
     required this.subtitle,
     required this.petName,
     required this.updatedAt,
+    required this.avatarUrl,
     required this.onTap,
   });
 
@@ -134,7 +181,14 @@ class _ConversationCard extends StatelessWidget {
       child: Ink(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
+          gradient: LinearGradient(
+            colors: [
+              theme.colorScheme.surface,
+              theme.colorScheme.secondaryContainer.withOpacity(0.8),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
@@ -148,14 +202,17 @@ class _ConversationCard extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 26,
-              backgroundColor:
-                  theme.colorScheme.primary.withOpacity(0.1),
-              child: Text(
-                title.isNotEmpty ? title[0].toUpperCase() : '?',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: theme.colorScheme.primary,
-                ),
-              ),
+              backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+              backgroundImage:
+                  avatarUrl != null ? NetworkImage(avatarUrl!) : null,
+              child: avatarUrl == null
+                  ? Text(
+                      title.isNotEmpty ? title[0].toUpperCase() : '?',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: theme.colorScheme.primary,
+                      ),
+                    )
+                  : null,
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -235,9 +292,26 @@ class _EmptyConversations extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.wechat_outlined,
-                size: 64, color: theme.colorScheme.primary),
-            const SizedBox(height: 16),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(28),
+              child: Image.network(
+                'https://images.unsplash.com/photo-1507146426996-ef05306b995a?auto=format&fit=crop&w=420&q=80',
+                height: 140,
+                width: 200,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  height: 140,
+                  width: 200,
+                  color: theme.colorScheme.primary.withOpacity(0.1),
+                  child: Icon(
+                    Icons.chat_bubble_outline,
+                    size: 38,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
             Text(
               'Henüz bir konuşma yok',
               style: theme.textTheme.titleMedium,
@@ -360,4 +434,10 @@ String _formatUpdatedAt(DateTime time) {
   final hours = time.hour.toString().padLeft(2, '0');
   final minutes = time.minute.toString().padLeft(2, '0');
   return '$hours:$minutes';
+}
+
+String? _resolveAvatarUrl(String? path) {
+  if (path == null || path.isEmpty) return null;
+  if (path.startsWith('http')) return path;
+  return '$apiBaseUrl$path';
 }

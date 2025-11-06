@@ -21,13 +21,15 @@ class ModernBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     final gradientColors = colors ?? [
       Theme.of(context).colorScheme.primary.withOpacity(0.18),
-      Theme.of(context).colorScheme.secondaryContainer.withOpacity(0.16),
-      Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.22),
+      Theme.of(context).colorScheme.secondary.withOpacity(0.12),
+      Theme.of(context).colorScheme.tertiary.withOpacity(0.14),
     ];
 
     final accentColor = Theme.of(context).colorScheme.primary.withOpacity(0.12);
     final secondaryAccent =
-        Theme.of(context).colorScheme.secondary.withOpacity(0.08);
+        Theme.of(context).colorScheme.secondaryContainer.withOpacity(0.12);
+    final tertiaryAccent =
+        Theme.of(context).colorScheme.secondary.withOpacity(0.1);
 
     return Container(
       decoration: BoxDecoration(
@@ -53,6 +55,23 @@ class ModernBackground extends StatelessWidget {
             child: _Blob(
               diameter: 200,
               color: secondaryAccent,
+            ),
+          ),
+          Positioned(
+            top: 120,
+            left: -60,
+            child: _Blob(
+              diameter: 160,
+              color: tertiaryAccent,
+            ),
+          ),
+          Positioned(
+            top: 36,
+            right: 24,
+            child: Icon(
+              Icons.pets,
+              size: 64,
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
             ),
           ),
           child,

@@ -41,7 +41,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   Future<void> _initialiseChat() async {
     await _fetchMessages();
-    _socketService.connect();
+    await _socketService.connect();
     _socketService.joinRoom(widget.conversationId);
 
     _socketService.onMessage((data) {
