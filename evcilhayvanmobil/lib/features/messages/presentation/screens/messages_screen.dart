@@ -8,6 +8,18 @@ import 'package:evcilhayvanmobil/core/http.dart';
 import 'package:evcilhayvanmobil/core/theme/app_palette.dart';
 import 'package:evcilhayvanmobil/core/widgets/modern_background.dart';
 import 'package:evcilhayvanmobil/features/messages/data/repositories/message_repository.dart';
+import 'package:evcilhayvanmobil/features/pets/data/repositories/pets_repository.dart';
+import 'package:evcilhayvanmobil/features/pets/domain/models/pet_model.dart';
+
+final _conversationPetProvider =
+    FutureProvider.autoDispose.family<Pet?, String>((ref, petId) async {
+  final repo = ref.watch(petsRepositoryProvider);
+  try {
+    return await repo.getPetById(petId);
+  } catch (_) {
+    return null;
+  }
+});
 
 class MessagesScreen extends ConsumerWidget {
   const MessagesScreen({super.key});
@@ -54,7 +66,8 @@ class MessagesScreen extends ConsumerWidget {
                               subtitle: conv.lastMessage.isNotEmpty
                                   ? conv.lastMessage
                                   : 'Sohbete başla',
-                              petName: conv.relatedPet.name,
+                              relatedPet: conv.relatedPet,
+                              relatedPetId: conv.relatedPetId,
                               updatedAt: conv.updatedAt,
                               avatarUrl: _resolveAvatarUrl(
                                 conv.otherParticipant.avatarUrl,
@@ -163,10 +176,11 @@ class _Header extends StatelessWidget {
   }
 }
 
-class _ConversationCard extends StatelessWidget {
+class _ConversationCard extends ConsumerWidget {
   final String title;
   final String subtitle;
-  final String petName;
+  final Pet? relatedPet;
+  final String? relatedPetId;
   final DateTime updatedAt;
   final String? avatarUrl;
   final VoidCallback onTap;
@@ -174,15 +188,31 @@ class _ConversationCard extends StatelessWidget {
   const _ConversationCard({
     required this.title,
     required this.subtitle,
-    required this.petName,
+    this.relatedPet,
+    this.relatedPetId,
     required this.updatedAt,
     required this.avatarUrl,
     required this.onTap,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    AsyncValue<Pet?> petAsync;
+    if (relatedPet != null) {
+      petAsync = AsyncValue<Pet?>.data(relatedPet);
+    } else if (relatedPetId != null && relatedPetId!.isNotEmpty) {
+      petAsync = ref.watch(_conversationPetProvider(relatedPetId!));
+    } else {
+      petAsync = const AsyncData<Pet?>(null);
+    }
+
+    final petChipLabel = petAsync.when(
+      data: (pet) => pet?.name ?? 'İlan bilgisi bulunamadı',
+      loading: () => 'İlan yükleniyor...',
+      error: (_, __) => 'İlan bilgisi alınamadı',
+    );
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(24),
@@ -273,7 +303,7 @@ class _ConversationCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          petName,
+                          petChipLabel,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,
