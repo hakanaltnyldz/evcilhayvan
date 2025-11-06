@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:evcilhayvanmobil/features/auth/data/repositories/auth_repository.dart';
+import 'package:evcilhayvanmobil/core/theme/app_palette.dart';
 
 class MainShell extends ConsumerStatefulWidget {
   final Widget child;
@@ -61,15 +62,30 @@ class _MainShellState extends ConsumerState<MainShell> {
         resizeToAvoidBottomInset: false, // 🔧 alt taşma uyarılarını da susturur
         body: widget.child,
         floatingActionButton: (currentUser != null)
-            ? FloatingActionButton.extended(
-                onPressed: () {
-                  context.pushNamed('create-pet');
-                },
-                backgroundColor: theme.colorScheme.secondary,
-                foregroundColor: theme.colorScheme.onSecondary,
-                icon: const Icon(Icons.add),
-                label: const Text('Yeni İlan'),
-                elevation: 6,
+            ? DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: AppPalette.accentGradient,
+                  ),
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppPalette.secondary.withOpacity(0.32),
+                      blurRadius: 24,
+                      offset: const Offset(0, 12),
+                    ),
+                  ],
+                ),
+                child: FloatingActionButton.extended(
+                  onPressed: () {
+                    context.pushNamed('create-pet');
+                  },
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: Colors.white,
+                  icon: const Icon(Icons.add),
+                  label: const Text('Yeni İlan'),
+                  elevation: 0,
+                ),
               )
             : null,
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
@@ -80,16 +96,16 @@ class _MainShellState extends ConsumerState<MainShell> {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  theme.colorScheme.surface.withOpacity(0.92),
+                  AppPalette.background.withOpacity(0.94),
                   theme.colorScheme.surfaceVariant.withOpacity(0.9),
                 ],
               ),
               borderRadius: BorderRadius.circular(32),
               boxShadow: [
                 BoxShadow(
-                  color: theme.colorScheme.primary.withOpacity(0.15),
-                  blurRadius: 26,
-                  offset: const Offset(0, 16),
+                  color: theme.colorScheme.primary.withOpacity(0.18),
+                  blurRadius: 28,
+                  offset: const Offset(0, 18),
                 ),
               ],
             ),

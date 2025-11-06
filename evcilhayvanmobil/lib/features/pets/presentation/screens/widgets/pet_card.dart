@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:evcilhayvanmobil/core/http.dart';
+import 'package:evcilhayvanmobil/core/theme/app_palette.dart';
 import 'package:evcilhayvanmobil/features/pets/domain/models/pet_model.dart';
 
 class PetCard extends StatefulWidget {
@@ -77,32 +78,53 @@ class _PetImage extends StatelessWidget {
           tag: heroTag,
           child: ClipRRect(
             borderRadius: borderRadius,
-            child: SizedBox(
-              height: 210,
-              width: double.infinity,
-              child: pet.photos.isNotEmpty
-                  ? CachedNetworkImage(
-                      imageUrl: '${apiBaseUrl}${pet.photos[0]}',
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(
-                        color: Colors.grey[200],
+              child: SizedBox(
+                height: 210,
+                width: double.infinity,
+                child: pet.photos.isNotEmpty
+                    ? CachedNetworkImage(
+                        imageUrl: '${apiBaseUrl}${pet.photos[0]}',
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Color(0xFFE5E3FF),
+                              Color(0xFFFDE4DF),
+                            ],
+                          ),
+                        ),
                         child: const Center(child: CircularProgressIndicator()),
                       ),
                       errorWidget: (context, url, error) => Container(
-                        color: Colors.grey[200],
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Color(0xFFE5E3FF),
+                              Color(0xFFFDE4DF),
+                            ],
+                          ),
+                        ),
                         child: Icon(
                           Icons.pets,
                           size: 76,
-                          color: Colors.grey[500],
+                          color: AppPalette.primary.withOpacity(0.5),
                         ),
                       ),
                     )
                   : Container(
-                      color: Colors.grey[200],
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Color(0xFFE5E3FF),
+                            Color(0xFFFDE4DF),
+                          ],
+                        ),
+                      ),
                       child: Icon(
                         Icons.pets,
                         size: 76,
-                        color: Colors.grey[500],
+                        color: AppPalette.primary.withOpacity(0.5),
                       ),
                     ),
             ),
@@ -219,7 +241,7 @@ class _PetInfoSection extends StatelessWidget {
               CircleAvatar(
                 radius: 18,
                 backgroundColor:
-                    Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    Theme.of(context).colorScheme.primary.withOpacity(0.12),
                 child: Text(
                   avatarLetter,
                   style: const TextStyle(fontWeight: FontWeight.bold),
@@ -242,10 +264,9 @@ class _PetInfoSection extends StatelessWidget {
                         pet.location['coordinates'].length == 2)
                       Text(
                         'Konum: ${pet.location['coordinates'][1]}, ${pet.location['coordinates'][0]}',
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodySmall
-                            ?.copyWith(color: Colors.grey[600]),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppPalette.onSurfaceVariant,
+                            ),
                       ),
                   ],
                 ),
@@ -273,22 +294,32 @@ class _Badge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = backgroundColor ?? Colors.white.withOpacity(0.85);
-    final fgColor = foregroundColor ?? Colors.black87;
+    final fgColor = foregroundColor ??
+        (backgroundColor == null ? Colors.white : Colors.black87);
+
+    final decoration = BoxDecoration(
+      gradient: backgroundColor == null
+          ? LinearGradient(
+              colors: [
+                AppPalette.primary.withOpacity(0.92),
+                AppPalette.secondary.withOpacity(0.88),
+              ],
+            )
+          : null,
+      color: backgroundColor?.withOpacity(0.9),
+      borderRadius: BorderRadius.circular(20),
+      boxShadow: [
+        BoxShadow(
+          color: AppPalette.primary.withOpacity(0.18),
+          blurRadius: 18,
+          offset: const Offset(0, 10),
+        ),
+      ],
+    );
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
+      decoration: decoration,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -324,7 +355,12 @@ class _InfoChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.08),
+          gradient: LinearGradient(
+            colors: [
+              Theme.of(context).colorScheme.primary.withOpacity(0.16),
+              Theme.of(context).colorScheme.primary.withOpacity(0.08),
+            ],
+          ),
           borderRadius: BorderRadius.circular(18),
         ),
         child: Row(

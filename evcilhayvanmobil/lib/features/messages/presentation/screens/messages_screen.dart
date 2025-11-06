@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:evcilhayvanmobil/core/http.dart';
+import 'package:evcilhayvanmobil/core/theme/app_palette.dart';
 import 'package:evcilhayvanmobil/core/widgets/modern_background.dart';
 import 'package:evcilhayvanmobil/features/messages/data/repositories/message_repository.dart';
 
@@ -101,12 +102,19 @@ class _Header extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         gradient: LinearGradient(
           colors: [
-            theme.colorScheme.primary.withOpacity(0.14),
-            theme.colorScheme.secondary.withOpacity(0.18),
+            AppPalette.heroGradient.first.withOpacity(0.26),
+            AppPalette.heroGradient.last.withOpacity(0.24),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: AppPalette.primary.withOpacity(0.18),
+            blurRadius: 26,
+            offset: const Offset(0, 18),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -183,8 +191,8 @@ class _ConversationCard extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              theme.colorScheme.surface,
-              theme.colorScheme.secondaryContainer.withOpacity(0.8),
+              AppPalette.background,
+              AppPalette.heroGradient.last.withOpacity(0.12),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -202,7 +210,7 @@ class _ConversationCard extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 26,
-              backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+              backgroundColor: theme.colorScheme.primary.withOpacity(0.12),
               backgroundImage:
                   avatarUrl != null ? NetworkImage(avatarUrl!) : null,
               child: avatarUrl == null
@@ -210,6 +218,7 @@ class _ConversationCard extends StatelessWidget {
                       title.isNotEmpty ? title[0].toUpperCase() : '?',
                       style: theme.textTheme.titleMedium?.copyWith(
                         color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.w700,
                       ),
                     )
                   : null,
@@ -249,22 +258,25 @@ class _ConversationCard extends StatelessWidget {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withOpacity(0.08),
+                      gradient: LinearGradient(
+                        colors: AppPalette.accentGradient,
+                      ),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.pets,
                           size: 16,
-                          color: theme.colorScheme.primary,
+                          color: Colors.white,
                         ),
                         const SizedBox(width: 6),
                         Text(
                           petName,
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.primary,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],

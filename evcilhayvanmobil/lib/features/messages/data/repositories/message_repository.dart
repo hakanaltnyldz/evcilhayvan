@@ -40,7 +40,9 @@ class MessageRepository {
   Future<List<Conversation>> getMyConversations(String currentUserId) async {
     try {
       final response = await _dio.get('/api/conversations/me');
-      final List<dynamic> jsonList = response.data['conversations'];
+      final data = response.data as Map<String, dynamic>;
+      final List<dynamic> jsonList =
+          (data['conversations'] as List?) ?? (data['data'] as List?) ?? const [];
       
       // Her bir sohbeti modelimize çevirirken currentUserId'yi yolluyoruz
       // ki 'otherParticipant'ı doğru bulabilelim.
@@ -56,7 +58,9 @@ class MessageRepository {
   Future<List<Message>> getMessages(String conversationId) async {
     try {
       final response = await _dio.get('/api/conversations/$conversationId');
-      final List<dynamic> jsonList = response.data['messages'];
+      final data = response.data as Map<String, dynamic>;
+      final List<dynamic> jsonList =
+          (data['messages'] as List?) ?? (data['data'] as List?) ?? const [];
       return jsonList.map((json) => Message.fromJson(json)).toList();
     } on DioException catch (e) {
       throw Exception('Mesajlar alınamadı: ${e.response?.data['message']}');
@@ -71,9 +75,11 @@ class MessageRepository {
     try {
       final response = await _dio.post(
         '/api/conversations/$conversationId',
-        data: { 'text': text },
+        data: {'text': text},
       );
-      return Message.fromJson(response.data['message']);
+      final data = response.data as Map<String, dynamic>;
+      final payload = (data['message'] as Map<String, dynamic>?) ?? data;
+      return Message.fromJson(payload);
     } on DioException catch (e) {
       throw Exception('Mesaj gönderilemedi: ${e.response?.data['message']}');
     }
@@ -89,7 +95,9 @@ class MessageRepository {
         data: {'participantId': participantId},
       );
 
-      final data = response.data['conversation'] as Map<String, dynamic>;
+      final responseBody = response.data as Map<String, dynamic>;
+      final data =
+          (responseBody['conversation'] as Map<String, dynamic>?) ?? responseBody;
       return Conversation.fromJson(
         data,
         currentUserId,

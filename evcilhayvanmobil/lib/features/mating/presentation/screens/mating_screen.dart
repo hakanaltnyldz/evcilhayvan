@@ -1,6 +1,7 @@
 // lib/features/mating/presentation/screens/mating_screen.dart
 import 'package:flutter/material.dart';
 
+import 'package:evcilhayvanmobil/core/theme/app_palette.dart';
 import 'package:evcilhayvanmobil/core/widgets/modern_background.dart';
 
 class MatingScreen extends StatefulWidget {
@@ -96,13 +97,22 @@ class _MatingScreenState extends State<MatingScreen> {
                   'Maksimum mesafe: ${_maxDistance.round()} km',
                   style: theme.textTheme.bodyMedium,
                 ),
-                Slider(
-                  value: _maxDistance,
-                  min: 1,
-                  max: 50,
-                  divisions: 49,
-                  label: '${_maxDistance.round()} km',
-                  onChanged: (value) => setState(() => _maxDistance = value),
+                SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    activeTrackColor: theme.colorScheme.primary,
+                    inactiveTrackColor:
+                        theme.colorScheme.primary.withOpacity(0.15),
+                    thumbColor: theme.colorScheme.secondary,
+                    overlayColor: theme.colorScheme.secondary.withOpacity(0.12),
+                  ),
+                  child: Slider(
+                    value: _maxDistance,
+                    min: 1,
+                    max: 50,
+                    divisions: 49,
+                    label: '${_maxDistance.round()} km',
+                    onChanged: (value) => setState(() => _maxDistance = value),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Expanded(
@@ -147,15 +157,30 @@ class _FilterChips extends StatelessWidget {
         Text(label, style: theme.textTheme.titleSmall),
         const SizedBox(height: 6),
         Wrap(
-          spacing: 8,
+          spacing: 10,
+          runSpacing: 10,
           children: values.map((value) {
             final isSelected = value == selectedValue;
             return FilterChip(
-              label: Text(value),
+              label: Text(
+                value,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: isSelected
+                      ? Colors.white
+                      : theme.colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
               selected: isSelected,
               onSelected: (_) => onSelected(value),
-              selectedColor: theme.colorScheme.primary.withOpacity(0.2),
+              showCheckmark: false,
               backgroundColor: theme.colorScheme.surface,
+              selectedColor: theme.colorScheme.primary,
+              side: BorderSide(
+                color: isSelected
+                    ? Colors.transparent
+                    : theme.colorScheme.primary.withOpacity(0.12),
+              ),
             );
           }).toList(),
         ),
@@ -184,6 +209,9 @@ class _ProfileCard extends StatelessWidget {
             offset: const Offset(0, 12),
           ),
         ],
+        border: Border.all(
+          color: AppPalette.primary.withOpacity(0.06),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

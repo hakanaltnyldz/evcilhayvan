@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:evcilhayvanmobil/core/http.dart';
+import 'package:evcilhayvanmobil/core/theme/app_palette.dart';
 import 'package:evcilhayvanmobil/features/pets/data/repositories/pets_repository.dart';
 import 'package:evcilhayvanmobil/features/pets/domain/models/pet_model.dart';
 import 'package:evcilhayvanmobil/features/auth/data/repositories/auth_repository.dart';
@@ -31,7 +32,7 @@ class PetDetailScreen extends ConsumerWidget {
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFFc7d2fe), Color(0xFFeef2ff)],
+              colors: AppPalette.heroGradient,
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
             ),
@@ -45,7 +46,7 @@ class PetDetailScreen extends ConsumerWidget {
           return Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFFeef2ff), Color(0xFFF8F9FB)],
+                colors: AppPalette.backgroundGradient,
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
@@ -143,6 +144,7 @@ class _DetailHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final heroTag = 'pet-image-${pet.id}';
+    final theme = Theme.of(context);
 
     final locationCoordinates = pet.location['coordinates'];
     final hasCoordinates =
@@ -165,20 +167,51 @@ class _DetailHeader extends StatelessWidget {
                       imageUrl: '${apiBaseUrl}${pet.photos[0]}',
                       fit: BoxFit.cover,
                       placeholder: (context, url) => Container(
-                        color: Colors.grey[200],
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              AppPalette.heroGradient.first.withOpacity(0.35),
+                              AppPalette.heroGradient.last.withOpacity(0.3),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
                         child: const Center(child: CircularProgressIndicator()),
                       ),
                       errorWidget: (context, url, error) => Container(
-                        color: Colors.grey[200],
-                        child: const Center(
-                          child: Icon(Icons.broken_image, size: 64, color: Colors.grey),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              AppPalette.heroGradient.first.withOpacity(0.25),
+                              AppPalette.heroGradient.last.withOpacity(0.25),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.broken_image,
+                          size: 64,
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                         ),
                       ),
                     )
                   : Container(
-                      color: Colors.grey[200],
-                      child: const Center(
-                        child: Icon(Icons.pets, size: 100, color: Colors.grey),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppPalette.heroGradient.first.withOpacity(0.25),
+                            AppPalette.heroGradient.last.withOpacity(0.25),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.pets,
+                        size: 100,
+                        color: Theme.of(context).colorScheme.primary.withOpacity(0.65),
                       ),
                     ),
             ),
@@ -216,27 +249,27 @@ class _DetailHeader extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    color: Colors.white.withOpacity(0.18),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.25),
-                      width: 1.2,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.shield_rounded,
-                        color: Colors.white.withOpacity(0.9),
-                        size: 20,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        color: theme.colorScheme.surface.withOpacity(0.22),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.3),
+                          width: 1.2,
+                        ),
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        pet.isActive ? 'Yayında' : 'Pasif',
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.shield_rounded,
+                            color: Colors.white.withOpacity(0.9),
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            pet.isActive ? 'Yayında' : 'Pasif',
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
@@ -267,22 +300,22 @@ class _DetailHeader extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(24),
-                    color: Colors.white.withOpacity(0.85),
+                    color: theme.colorScheme.surface.withOpacity(0.9),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.5),
+                      color: theme.colorScheme.primary.withOpacity(0.08),
                     ),
                   ),
                   child: Row(
                     children: [
                       Icon(Icons.place_rounded,
-                          color: Theme.of(context).colorScheme.primary),
+                          color: theme.colorScheme.primary),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           hasCoordinates
                               ? 'Konum: ${locationCoordinates[1]}, ${locationCoordinates[0]}'
                               : 'Konum bilgisi paylaşılmadı',
-                          style: Theme.of(context).textTheme.bodyMedium,
+                          style: theme.textTheme.bodyMedium,
                         ),
                       ),
                     ],
@@ -304,6 +337,7 @@ class _InfoGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final items = <_InfoTileData>[
       _InfoTileData('Tür', pet.species, Icons.category_outlined),
       _InfoTileData('Cins', pet.breed ?? 'Bilinmiyor', Icons.badge_outlined),
@@ -334,15 +368,18 @@ class _InfoGrid extends StatelessWidget {
           },
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(18),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: theme.colorScheme.primary.withOpacity(0.08),
                   blurRadius: 18,
                   offset: const Offset(0, 8),
                 ),
               ],
+              border: Border.all(
+                color: theme.colorScheme.primary.withOpacity(0.05),
+              ),
             ),
             padding: const EdgeInsets.all(16),
             child: Row(
@@ -351,11 +388,10 @@ class _InfoGrid extends StatelessWidget {
                   height: 38,
                   width: 38,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.12),
+                    color: theme.colorScheme.primary.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(item.icon,
-                      color: Theme.of(context).colorScheme.primary),
+                  child: Icon(item.icon, color: theme.colorScheme.primary),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -365,14 +401,14 @@ class _InfoGrid extends StatelessWidget {
                     children: [
                       Text(
                         item.title,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey[600],
+                        style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
                             ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         item.value,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
                       ),
@@ -414,8 +450,8 @@ class _OwnerSection extends StatelessWidget {
           borderRadius: BorderRadius.circular(24),
           gradient: LinearGradient(
             colors: [
-              Theme.of(context).colorScheme.primary.withOpacity(0.12),
-              Colors.white,
+              AppPalette.heroGradient.first.withOpacity(0.18),
+              Theme.of(context).colorScheme.surface,
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -456,7 +492,7 @@ class _OwnerSection extends StatelessWidget {
                     style: Theme.of(context)
                         .textTheme
                         .bodySmall
-                        ?.copyWith(color: Colors.grey[600]),
+                        ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                   ),
                 ],
               ),
@@ -475,6 +511,7 @@ class _ActionButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return SafeArea(
       minimum: const EdgeInsets.fromLTRB(24, 12, 24, 20),
       child: TweenAnimationBuilder<double>(
@@ -486,11 +523,11 @@ class _ActionButtons extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(28),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.06),
+                color: theme.colorScheme.primary.withOpacity(0.08),
                 blurRadius: 22,
                 offset: const Offset(0, 10),
               ),
@@ -505,9 +542,9 @@ class _ActionButtons extends StatelessWidget {
                   label: const Text('Mesaj At'),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    foregroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: theme.colorScheme.primary,
                     side: BorderSide(
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                      color: theme.colorScheme.primary.withOpacity(0.3),
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18),
@@ -527,10 +564,14 @@ class _ActionButtons extends StatelessWidget {
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(Icons.favorite_rounded, color: Colors.white),
-                      SizedBox(width: 8),
-                      Text('Beğen'),
+                    children: [
+                      Icon(Icons.favorite_rounded,
+                          color: theme.colorScheme.onPrimary),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Beğen',
+                        style: TextStyle(color: theme.colorScheme.onPrimary),
+                      ),
                     ],
                   ),
                 ),
@@ -558,6 +599,7 @@ class _PetBioCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final ageInYears = pet.ageMonths ~/ 12;
     final remainingMonths = pet.ageMonths % 12;
     final ageLabel = ageInYears > 0
@@ -572,15 +614,15 @@ class _PetBioCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         gradient: LinearGradient(
           colors: [
-            Theme.of(context).colorScheme.primary.withOpacity(0.15),
-            Colors.white,
+            AppPalette.heroGradient.first.withOpacity(0.16),
+            theme.colorScheme.surface,
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: theme.colorScheme.primary.withOpacity(0.08),
             blurRadius: 18,
             offset: const Offset(0, 10),
           ),
@@ -595,10 +637,10 @@ class _PetBioCard extends StatelessWidget {
                 height: 44,
                 width: 44,
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.18),
+                  color: theme.colorScheme.primary.withOpacity(0.18),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: const Icon(Icons.pets, color: Colors.white),
+                child: Icon(Icons.pets, color: theme.colorScheme.onPrimary),
               ),
               const SizedBox(width: 16),
               Column(
@@ -606,17 +648,15 @@ class _PetBioCard extends StatelessWidget {
                 children: [
                   Text(
                     '${pet.species} • ${pet.gender}',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     'Yaklaşık $ageLabel',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: Colors.grey[600]),
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                   ),
                 ],
               ),
@@ -627,7 +667,7 @@ class _PetBioCard extends StatelessWidget {
             pet.bio?.isNotEmpty == true
                 ? pet.bio!
                 : 'Bu sevimli dostumuz hakkında yakında daha fazla bilgi paylaşılacak.',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.5),
+            style: theme.textTheme.bodyLarge?.copyWith(height: 1.5),
           ),
         ],
       ),
@@ -668,6 +708,7 @@ class _DetailChips extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final chips = _buildChips();
+    final theme = Theme.of(context);
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
@@ -687,17 +728,17 @@ class _DetailChips extends StatelessWidget {
               (chip) => Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: theme.colorScheme.surface,
                   borderRadius: BorderRadius.circular(18),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
+                      color: theme.colorScheme.primary.withOpacity(0.06),
                       blurRadius: 12,
                       offset: const Offset(0, 6),
                     ),
                   ],
                   border: Border.all(
-                    color: Colors.grey.withOpacity(0.08),
+                    color: theme.colorScheme.primary.withOpacity(0.08),
                   ),
                 ),
                 child: Row(
@@ -706,12 +747,12 @@ class _DetailChips extends StatelessWidget {
                     Icon(
                       chip.icon,
                       size: 18,
-                      color: const Color(0xFF6366F1),
+                      color: theme.colorScheme.primary,
                     ),
                     const SizedBox(width: 8),
                     Text(
                       chip.label,
-                      style: const TextStyle(
+                      style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -762,13 +803,14 @@ class _HighlightsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final highlights = _buildHighlights();
+    final theme = Theme.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Öne Çıkan Özellikler',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+          style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
         ),
@@ -786,11 +828,11 @@ class _HighlightsSection extends StatelessWidget {
               margin: EdgeInsets.only(bottom: index == highlights.length - 1 ? 0 : 16),
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: theme.colorScheme.surface,
                 borderRadius: BorderRadius.circular(22),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: theme.colorScheme.primary.withOpacity(0.08),
                     blurRadius: 18,
                     offset: const Offset(0, 10),
                   ),
@@ -803,12 +845,12 @@ class _HighlightsSection extends StatelessWidget {
                     height: 44,
                     width: 44,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.12),
+                      color: theme.colorScheme.primary.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Icon(
                       highlight.icon,
-                      color: Theme.of(context).colorScheme.primary,
+                      color: theme.colorScheme.primary,
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -818,16 +860,16 @@ class _HighlightsSection extends StatelessWidget {
                       children: [
                         Text(
                           highlight.title,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w700,
                               ),
                         ),
                         const SizedBox(height: 6),
                         Text(
                           highlight.description,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          style: theme.textTheme.bodyMedium?.copyWith(
                                 height: 1.5,
-                                color: Colors.grey[700],
+                                color: theme.colorScheme.onSurfaceVariant,
                               ),
                         ),
                       ],
@@ -867,14 +909,15 @@ class _OwnerInfoBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(22),
-        color: Colors.white,
+        color: theme.colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: theme.colorScheme.primary.withOpacity(0.08),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -885,7 +928,7 @@ class _OwnerInfoBanner extends StatelessWidget {
         children: [
           Icon(
             Icons.celebration_rounded,
-            color: Theme.of(context).colorScheme.primary,
+            color: theme.colorScheme.primary,
             size: 28,
           ),
           const SizedBox(width: 12),
@@ -895,17 +938,17 @@ class _OwnerInfoBanner extends StatelessWidget {
               children: [
                 Text(
                   'Bu ilan size ait',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   'İlanını güncel tutarak daha fazla ilgi çekebilirsin. Fotoğraf ve açıklama eklemeyi unutma!',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(height: 1.5, color: Colors.grey[700]),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    height: 1.5,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),

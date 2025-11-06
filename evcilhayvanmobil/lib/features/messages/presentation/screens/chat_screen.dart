@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:evcilhayvanmobil/core/socket_service.dart';
+import 'package:evcilhayvanmobil/core/theme/app_palette.dart';
 import 'package:evcilhayvanmobil/core/widgets/modern_background.dart';
 import 'package:evcilhayvanmobil/features/auth/data/repositories/auth_repository.dart';
 import 'package:evcilhayvanmobil/features/messages/data/repositories/message_repository.dart';
@@ -271,13 +272,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surface,
                     borderRadius: BorderRadius.circular(24),
+                    gradient: LinearGradient(
+                      colors: [
+                        theme.colorScheme.surface,
+                        AppPalette.background,
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
                     boxShadow: [
                       BoxShadow(
                         color: theme.colorScheme.primary.withOpacity(0.1),
-                        blurRadius: 12,
-                        offset: const Offset(0, 6),
+                        blurRadius: 16,
+                        offset: const Offset(0, 8),
                       ),
                     ],
                   ),
@@ -301,24 +309,34 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       ),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: IconButton(
-                          onPressed: _isSending ? null : _sendMessage,
-                          style: IconButton.styleFrom(
-                            backgroundColor: theme.colorScheme.primary,
-                            foregroundColor: theme.colorScheme.onPrimary,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: AppPalette.accentGradient,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
                           ),
-                          icon: _isSending
-                              ? SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation(
-                                      theme.colorScheme.onPrimary,
+                          child: IconButton(
+                            onPressed: _isSending ? null : _sendMessage,
+                            style: IconButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor:
+                                  theme.colorScheme.onSurface.withOpacity(0.06),
+                            ),
+                            icon: _isSending
+                                ? SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: const AlwaysStoppedAnimation(
+                                        Colors.white,
+                                      ),
                                     ),
-                                  ),
-                                )
-                              : const Icon(Icons.send_rounded),
+                                  )
+                                : const Icon(Icons.send_rounded),
+                          ),
                         ),
                       ),
                     ],
@@ -343,13 +361,10 @@ class _MessageBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final background = isMine
-        ? LinearGradient(colors: [
-            theme.colorScheme.primary,
-            theme.colorScheme.primary.withOpacity(0.7),
-          ])
+        ? LinearGradient(colors: AppPalette.accentGradient)
         : LinearGradient(colors: [
             theme.colorScheme.surface,
-            theme.colorScheme.surfaceVariant.withOpacity(0.4),
+            theme.colorScheme.surfaceVariant.withOpacity(0.6),
           ]);
 
     final alignment = isMine ? Alignment.centerRight : Alignment.centerLeft;

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:evcilhayvanmobil/core/http.dart';
+import 'package:evcilhayvanmobil/core/theme/app_palette.dart';
 import 'package:evcilhayvanmobil/core/widgets/modern_background.dart';
 import 'package:evcilhayvanmobil/features/auth/data/repositories/auth_repository.dart';
 import 'package:evcilhayvanmobil/features/pets/data/repositories/pets_repository.dart';
@@ -255,33 +256,54 @@ class _ProfileHeader extends StatelessWidget {
     final theme = Theme.of(context);
     final avatarUrl = user.avatarUrl != null ? '${apiBaseUrl}${user.avatarUrl}' : null;
 
+    final onPrimary = theme.colorScheme.onPrimary;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(32),
+          gradient: LinearGradient(
+            colors: [
+              AppPalette.heroGradient.first.withOpacity(0.95),
+              AppPalette.heroGradient.last.withOpacity(0.8),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           boxShadow: [
             BoxShadow(
-              color: theme.colorScheme.primary.withOpacity(0.15),
-              blurRadius: 24,
-              offset: const Offset(0, 16),
+              color: AppPalette.primary.withOpacity(0.24),
+              blurRadius: 32,
+              offset: const Offset(0, 18),
             ),
           ],
         ),
         child: Row(
           children: [
-            CircleAvatar(
-              radius: 42,
-              backgroundImage:
-                  avatarUrl != null ? CachedNetworkImageProvider(avatarUrl) : null,
-              child: avatarUrl == null
-                  ? Text(
-                      user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
-                      style: theme.textTheme.titleLarge,
-                    )
-                  : null,
+            DecoratedBox(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.6),
+                  width: 3,
+                ),
+              ),
+              child: CircleAvatar(
+                radius: 42,
+                backgroundImage:
+                    avatarUrl != null ? CachedNetworkImageProvider(avatarUrl) : null,
+                backgroundColor: Colors.white.withOpacity(0.18),
+                child: avatarUrl == null
+                    ? Text(
+                        user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          color: onPrimary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      )
+                    : null,
+              ),
             ),
             const SizedBox(width: 18),
             Expanded(
@@ -292,15 +314,19 @@ class _ProfileHeader extends StatelessWidget {
                     user.name,
                     style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
+                      color: onPrimary,
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(user.email, style: theme.textTheme.bodyMedium),
+                  Text(
+                    user.email,
+                    style: theme.textTheme.bodyMedium?.copyWith(color: onPrimary.withOpacity(0.9)),
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     'Şehir: ${user.city ?? 'Belirtilmemiş'}',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+                      color: onPrimary.withOpacity(0.8),
                     ),
                   ),
                   if (user.about != null && user.about!.isNotEmpty) ...[
@@ -309,7 +335,9 @@ class _ProfileHeader extends StatelessWidget {
                       user.about!,
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodyMedium,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: onPrimary.withOpacity(0.9),
+                      ),
                     ),
                   ],
                 ],
@@ -322,11 +350,12 @@ class _ProfileHeader extends StatelessWidget {
                   petCount?.toString() ?? '-',
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
+                    color: onPrimary,
                   ),
                 ),
                 Text(
                   'İlan',
-                  style: theme.textTheme.bodySmall,
+                  style: theme.textTheme.bodySmall?.copyWith(color: onPrimary.withOpacity(0.9)),
                 ),
               ],
             ),
@@ -352,29 +381,37 @@ class _StatChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
+        gradient: LinearGradient(
+          colors: AppPalette.accentGradient,
+        ),
         boxShadow: [
           BoxShadow(
-            color: theme.colorScheme.primary.withOpacity(0.1),
-            blurRadius: 18,
-            offset: const Offset(0, 10),
+            color: AppPalette.secondary.withOpacity(0.22),
+            blurRadius: 22,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: theme.colorScheme.primary, size: 20),
-          const SizedBox(width: 8),
-          Text(label, style: theme.textTheme.bodySmall),
+          Icon(icon, color: Colors.white, size: 20),
+          const SizedBox(width: 10),
+          Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: Colors.white.withOpacity(0.9),
+            ),
+          ),
           const SizedBox(width: 6),
           Text(
             value,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
+              color: Colors.white,
             ),
           ),
         ],
@@ -394,13 +431,20 @@ class _NoPetsCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(28),
+          gradient: LinearGradient(
+            colors: [
+              AppPalette.heroGradient.first.withOpacity(0.1),
+              AppPalette.heroGradient.last.withOpacity(0.18),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           boxShadow: [
             BoxShadow(
-              color: theme.colorScheme.primary.withOpacity(0.08),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
+              color: theme.colorScheme.primary.withOpacity(0.1),
+              blurRadius: 28,
+              offset: const Offset(0, 18),
             ),
           ],
         ),
@@ -411,7 +455,7 @@ class _NoPetsCard extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               'Henüz hiç ilanınız yok.',
-              style: theme.textTheme.titleMedium,
+              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
             Text(

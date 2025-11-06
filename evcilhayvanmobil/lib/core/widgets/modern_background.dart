@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../theme/app_palette.dart';
+
 /// A reusable gradient background with subtle floating blobs for a modern look.
 class ModernBackground extends StatelessWidget {
   final Widget child;
@@ -19,17 +21,16 @@ class ModernBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gradientColors = colors ?? [
-      Theme.of(context).colorScheme.primary.withOpacity(0.18),
-      Theme.of(context).colorScheme.secondary.withOpacity(0.12),
-      Theme.of(context).colorScheme.tertiary.withOpacity(0.14),
-    ];
+    final gradientColors = colors ??
+        AppPalette.backgroundGradient
+            .map((color) => color.withOpacity(0.95))
+            .toList();
 
-    final accentColor = Theme.of(context).colorScheme.primary.withOpacity(0.12);
+    final accentColor = Theme.of(context).colorScheme.primary.withOpacity(0.14);
     final secondaryAccent =
-        Theme.of(context).colorScheme.secondaryContainer.withOpacity(0.12);
+        Theme.of(context).colorScheme.secondary.withOpacity(0.12);
     final tertiaryAccent =
-        Theme.of(context).colorScheme.secondary.withOpacity(0.1);
+        Theme.of(context).colorScheme.tertiary.withOpacity(0.1);
 
     return Container(
       decoration: BoxDecoration(
