@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:evcilhayvanmobil/features/auth/data/repositories/auth_repository.dart';
+
+import 'package:evcilhayvanmobil/core/http.dart';
 import 'package:evcilhayvanmobil/core/theme/app_palette.dart';
+import 'package:evcilhayvanmobil/features/auth/data/repositories/auth_repository.dart';
+import 'package:evcilhayvanmobil/features/auth/domain/user_model.dart';
 
 class MainShell extends ConsumerStatefulWidget {
   final Widget child;
@@ -15,10 +18,10 @@ class MainShell extends ConsumerStatefulWidget {
 class _MainShellState extends ConsumerState<MainShell> {
   int _selectedIndex = 0;
 
-  static const List<String> _routeNames = [
-    'home', // 0: Sahiplen
-    'connect', // 1: Bağlan
-    'create-pet', // 2: Yeniden
+  static const List<String?> _routeNames = [
+    'messages', // 0: Sohbetler
+    'home', // 1: Sahiplen
+    null, // 2: FAB alanı
     'mating', // 3: Çiftleştir
     'profile', // 4: Profil
   ];
@@ -27,27 +30,30 @@ class _MainShellState extends ConsumerState<MainShell> {
     final currentUser = ref.read(authProvider);
     if (index == 2) return;
 
-    if (currentUser == null && (index == 1 || index == 3 || index == 4)) {
+    if (currentUser == null && (index == 0 || index == 3 || index == 4)) {
       context.goNamed('login');
       return;
     }
 
-    context.goNamed(_routeNames[index]);
+    final routeName = _routeNames[index];
+    if (routeName != null) {
+      context.goNamed(routeName);
+    }
   }
 
   void _updateCurrentIndex(BuildContext context) {
     final String location = GoRouterState.of(context).uri.toString();
 
-    if (location.startsWith('/connect')) {
+    if (location.startsWith('/messages')) {
+      _selectedIndex = 0;
+    } else if (location == '/' || location.startsWith('/home')) {
       _selectedIndex = 1;
     } else if (location.startsWith('/mating')) {
       _selectedIndex = 3;
     } else if (location.startsWith('/profile')) {
       _selectedIndex = 4;
-    } else if (location == '/') {
-      _selectedIndex = 0;
     } else {
-      _selectedIndex = 0; // Varsayılan
+      _selectedIndex = 1; // Varsayılan: Sahiplen
     }
   }
 
@@ -123,14 +129,14 @@ class _MainShellState extends ConsumerState<MainShell> {
                 unselectedItemColor: theme.colorScheme.onSurfaceVariant,
                 items: const <BottomNavigationBarItem>[
                   BottomNavigationBarItem(
+                    icon: _MessagesNavIcon(isActive: false),
+                    activeIcon: _MessagesNavIcon(isActive: true),
+                    label: 'Sohbetler',
+                  ),
+                  BottomNavigationBarItem(
                     icon: Icon(Icons.pets_outlined),
                     activeIcon: Icon(Icons.pets),
                     label: 'Sahiplen',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.people_alt_outlined),
-                    activeIcon: Icon(Icons.people_alt),
-                    label: 'Bağlan',
                   ),
                   BottomNavigationBarItem(
                     icon: Icon(Icons.add, color: Colors.transparent),
@@ -154,4 +160,87 @@ class _MainShellState extends ConsumerState<MainShell> {
       ),
     );
   }
+}
+
+class _MessagesNavIcon extends ConsumerWidget {
+  final bool isActive;
+
+  const _MessagesNavIcon({required this.isActive});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final User? user = ref.watch(authProvider);
+    final avatarUrl = _resolveAvatarUrl(user?.avatarUrl);
+    final hasInitial = (user?.name ?? '').isNotEmpty;
+    final initial = hasInitial ? user!.name[0].toUpperCase() : null;
+
+    final borderColor = isActive
+        ? theme.colorScheme.primary
+        : theme.colorScheme.primary.withOpacity(0.2);
+
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: borderColor, width: 2),
+        color: theme.colorScheme.surface,
+      ),
+      child: ClipOval(
+        child: avatarUrl != null
+            ? Image.network(
+                avatarUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _NavIconFallback(
+                  isActive: isActive,
+                  initial: initial,
+                ),
+              )
+            : _NavIconFallback(
+                isActive: isActive,
+                initial: initial,
+              ),
+      ),
+    );
+  }
+}
+
+class _NavIconFallback extends StatelessWidget {
+  final bool isActive;
+  final String? initial;
+
+  const _NavIconFallback({required this.isActive, this.initial});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    if (initial != null) {
+      return Center(
+        child: Text(
+          initial!,
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: isActive
+                ? theme.colorScheme.primary
+                : theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      );
+    }
+
+    return Icon(
+      isActive ? Icons.chat_bubble : Icons.chat_bubble_outline,
+      color: isActive
+          ? theme.colorScheme.primary
+          : theme.colorScheme.onSurfaceVariant,
+      size: 20,
+    );
+  }
+}
+
+String? _resolveAvatarUrl(String? path) {
+  if (path == null || path.isEmpty) return null;
+  if (path.startsWith('http')) return path;
+  return '$apiBaseUrl$path';
 }
