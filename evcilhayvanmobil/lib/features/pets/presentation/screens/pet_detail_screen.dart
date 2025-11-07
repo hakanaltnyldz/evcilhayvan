@@ -8,6 +8,8 @@ import 'package:evcilhayvanmobil/core/theme/app_palette.dart';
 import 'package:evcilhayvanmobil/features/pets/data/repositories/pets_repository.dart';
 import 'package:evcilhayvanmobil/features/pets/domain/models/pet_model.dart';
 import 'package:evcilhayvanmobil/features/auth/data/repositories/auth_repository.dart';
+import 'package:evcilhayvanmobil/features/messages/data/repositories/message_repository.dart';
+import 'package:go_router/go_router.dart';
 
 final petDetailProvider = FutureProvider.autoDispose.family<Pet, String>((ref, petId) {
   final repository = ref.watch(petsRepositoryProvider);
@@ -504,14 +506,15 @@ class _OwnerSection extends StatelessWidget {
   }
 }
 
-class _ActionButtons extends StatelessWidget {
+class _ActionButtons extends ConsumerWidget {
   final Pet pet;
 
   const _ActionButtons({required this.pet});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final currentUser = ref.watch(authProvider);
     return SafeArea(
       minimum: const EdgeInsets.fromLTRB(24, 12, 24, 20),
       child: TweenAnimationBuilder<double>(
@@ -537,7 +540,60 @@ class _ActionButtons extends StatelessWidget {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () { /* TODO: Pass */ },
+                  onPressed: () async {
+                    final owner = pet.owner;
+                    if (owner == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('İlan sahibine ulaşılamadı.'),
+                        ),
+                      );
+                      return;
+                    }
+
+                    if (currentUser == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Sohbet başlatmak için giriş yapın.'),
+                        ),
+                      );
+                      return;
+                    }
+
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (_) => const _ProgressDialog(),
+                    );
+
+                    try {
+                      final repo = ref.read(messageRepositoryProvider);
+                      final conversation = await repo.createOrGetConversation(
+                        participantId: owner.id,
+                        currentUserId: currentUser.id,
+                        relatedPetId: pet.id,
+                      );
+
+                      if (!context.mounted) return;
+
+                      Navigator.of(context, rootNavigator: true).pop();
+                      context.pushNamed(
+                        'chat',
+                        pathParameters: {'conversationId': conversation.id},
+                        extra: {
+                          'name': owner.name,
+                          'avatar': _resolveAvatarUrl(owner.avatarUrl),
+                        },
+                      );
+                    } catch (e) {
+                      if (!context.mounted) return;
+
+                      Navigator.of(context, rootNavigator: true).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(e.toString())),
+                      );
+                    }
+                  },
                   icon: const Icon(Icons.chat_bubble_outline_rounded),
                   label: const Text('Mesaj At'),
                   style: OutlinedButton.styleFrom(
@@ -582,6 +638,34 @@ class _ActionButtons extends StatelessWidget {
       ),
     );
   }
+}
+
+class _ProgressDialog extends StatelessWidget {
+  const _ProgressDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            CircularProgressIndicator(),
+            SizedBox(width: 16),
+            Text('Sohbet hazırlanıyor...'),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String? _resolveAvatarUrl(String? path) {
+  if (path == null || path.isEmpty) return null;
+  if (path.startsWith('http')) return path;
+  return '$apiBaseUrl$path';
 }
 
 class _InfoTileData {
