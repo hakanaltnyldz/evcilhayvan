@@ -611,7 +611,55 @@ class _ActionButtons extends ConsumerWidget {
               const SizedBox(width: 16),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () { /* TODO: Like */ },
+                  onPressed: () async {
+                    final messenger = ScaffoldMessenger.of(context);
+                    try {
+                      final repository = ref.read(petsRepositoryProvider);
+                      final result = await repository.likePet(pet.id);
+
+                      ref.invalidate(petFeedProvider);
+                      ref.invalidate(allPetsProvider);
+                      ref.invalidate(petDetailProvider(pet.id));
+
+                      if (!context.mounted) return;
+
+                      if (result.didMatch) {
+                        final matchedUser = result.matchedUser;
+                        await showDialog(
+                          context: context,
+                          builder: (dialogContext) {
+                            return AlertDialog(
+                              title: const Text('Eşleşme! 🎉'),
+                              content: Text(
+                                matchedUser != null
+                                    ? '${matchedUser.name} ile eşleştiniz! Mesajlaşmaya başlamak için sohbet ekranını kullanabilirsiniz.'
+                                    : 'Harika! Yeni bir eşleşmeniz var. Mesajlaşmayı başlatmak için sohbet ekranını ziyaret edin.',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.of(dialogContext).pop(),
+                                  child: const Text('Tamam'),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      } else {
+                        messenger.showSnackBar(
+                          const SnackBar(
+                            content: Text('Beğeni gönderildi.'),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (!context.mounted) return;
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text('Beğenme sırasında bir hata oluştu: $e'),
+                        ),
+                      );
+                    }
+                  },
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
