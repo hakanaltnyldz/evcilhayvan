@@ -3,11 +3,13 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:go_router/go_router.dart';
 import 'package:evcilhayvanmobil/core/http.dart';
 import 'package:evcilhayvanmobil/core/theme/app_palette.dart';
 import 'package:evcilhayvanmobil/features/pets/data/repositories/pets_repository.dart';
 import 'package:evcilhayvanmobil/features/pets/domain/models/pet_model.dart';
 import 'package:evcilhayvanmobil/features/auth/data/repositories/auth_repository.dart';
+import 'package:evcilhayvanmobil/features/messages/data/repositories/message_repository.dart';
 
 final petDetailProvider = FutureProvider.autoDispose.family<Pet, String>((ref, petId) {
   final repository = ref.watch(petsRepositoryProvider);
@@ -504,13 +506,13 @@ class _OwnerSection extends StatelessWidget {
   }
 }
 
-class _ActionButtons extends StatelessWidget {
+class _ActionButtons extends ConsumerWidget {
   final Pet pet;
 
   const _ActionButtons({required this.pet});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     return SafeArea(
       minimum: const EdgeInsets.fromLTRB(24, 12, 24, 20),
@@ -537,7 +539,79 @@ class _ActionButtons extends StatelessWidget {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () { /* TODO: Pass */ },
+                  onPressed: () async {
+                    final currentUser = ref.read(authProvider);
+                    if (currentUser == null) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Mesaj göndermek için giriş yapmalısınız.'),
+                          ),
+                        );
+                        context.pushNamed('login');
+                      }
+                      return;
+                    }
+
+                    final owner = pet.owner;
+                    if (owner == null) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('İlan sahibine ulaşılamadı.'),
+                          ),
+                        );
+                      }
+                      return;
+                    }
+
+                    if (owner.id == currentUser.id) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Kendi ilanınızla mesajlaşamazsınız.'),
+                          ),
+                        );
+                      }
+                      return;
+                    }
+
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (_) => const _ProgressDialog(),
+                    );
+
+                    try {
+                      final conversation = await ref
+                          .read(messageRepositoryProvider)
+                          .createOrGetConversation(
+                            participantId: owner.id,
+                            currentUserId: currentUser.id,
+                            relatedPetId: pet.id,
+                          );
+
+                      if (!context.mounted) return;
+
+                      Navigator.of(context, rootNavigator: true).pop();
+                      ref.invalidate(conversationsProvider);
+
+                      context.pushNamed(
+                        'chat',
+                        pathParameters: {'conversationId': conversation.id},
+                        extra: {
+                          'name': owner.name,
+                          'avatar': _resolveOwnerAvatar(owner.avatarUrl),
+                        },
+                      );
+                    } catch (error) {
+                      if (!context.mounted) return;
+                      Navigator.of(context, rootNavigator: true).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(error.toString())),
+                      );
+                    }
+                  },
                   icon: const Icon(Icons.chat_bubble_outline_rounded),
                   label: const Text('Mesaj At'),
                   style: OutlinedButton.styleFrom(
@@ -590,6 +664,34 @@ class _InfoTileData {
   final IconData icon;
 
   const _InfoTileData(this.title, this.value, this.icon);
+}
+
+String? _resolveOwnerAvatar(String? path) {
+  if (path == null || path.isEmpty) return null;
+  if (path.startsWith('http')) return path;
+  return '$apiBaseUrl$path';
+}
+
+class _ProgressDialog extends StatelessWidget {
+  const _ProgressDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            CircularProgressIndicator(),
+            SizedBox(width: 16),
+            Text('Sohbet hazırlanıyor...'),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _PetBioCard extends StatelessWidget {
