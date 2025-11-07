@@ -15,39 +15,46 @@ class MainShell extends ConsumerStatefulWidget {
 class _MainShellState extends ConsumerState<MainShell> {
   int _selectedIndex = 0;
 
-  static const List<String> _routeNames = [
-    'home', // 0: Sahiplen
-    'connect', // 1: Bağlan
-    'create-pet', // 2: Yeniden
-    'mating', // 3: Çiftleştir
-    'profile', // 4: Profil
+  static const List<String?> _routeNames = [
+    'messages', // 0: Sohbetler
+    'home', // 1: Sahiplen
+    'connect', // 2: Bağlan
+    null, // 3: Yeni ilan (FAB)
+    'mating', // 4: Çiftleştir
+    'profile', // 5: Profil
   ];
 
   void _onItemTapped(int index, BuildContext context) {
     final currentUser = ref.read(authProvider);
-    if (index == 2) return;
+    final targetRoute = _routeNames[index];
 
-    if (currentUser == null && (index == 1 || index == 3 || index == 4)) {
+    if (targetRoute == null) {
+      return;
+    }
+
+    if (currentUser == null && (index == 0 || index == 2 || index == 4 || index == 5)) {
       context.goNamed('login');
       return;
     }
 
-    context.goNamed(_routeNames[index]);
+    context.goNamed(targetRoute);
   }
 
   void _updateCurrentIndex(BuildContext context) {
     final String location = GoRouterState.of(context).uri.toString();
 
-    if (location.startsWith('/connect')) {
-      _selectedIndex = 1;
-    } else if (location.startsWith('/mating')) {
-      _selectedIndex = 3;
-    } else if (location.startsWith('/profile')) {
-      _selectedIndex = 4;
-    } else if (location == '/') {
+    if (location.startsWith('/messages')) {
       _selectedIndex = 0;
+    } else if (location.startsWith('/connect')) {
+      _selectedIndex = 2;
+    } else if (location.startsWith('/mating')) {
+      _selectedIndex = 4;
+    } else if (location.startsWith('/profile')) {
+      _selectedIndex = 5;
+    } else if (location == '/') {
+      _selectedIndex = 1;
     } else {
-      _selectedIndex = 0; // Varsayılan
+      _selectedIndex = 1; // Varsayılan Sahiplen
     }
   }
 
@@ -123,6 +130,11 @@ class _MainShellState extends ConsumerState<MainShell> {
                 unselectedItemColor: theme.colorScheme.onSurfaceVariant,
                 items: const <BottomNavigationBarItem>[
                   BottomNavigationBarItem(
+                    icon: Icon(Icons.chat_bubble_outline),
+                    activeIcon: Icon(Icons.chat_bubble),
+                    label: 'Sohbetler',
+                  ),
+                  BottomNavigationBarItem(
                     icon: Icon(Icons.pets_outlined),
                     activeIcon: Icon(Icons.pets),
                     label: 'Sahiplen',
@@ -134,7 +146,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                   ),
                   BottomNavigationBarItem(
                     icon: Icon(Icons.add, color: Colors.transparent),
-                    label: 'Yeniden', // boşluk için
+                    label: '',
                   ),
                   BottomNavigationBarItem(
                     icon: Icon(Icons.favorite_border),

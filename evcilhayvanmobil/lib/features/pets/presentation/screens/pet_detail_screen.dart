@@ -1,13 +1,16 @@
 // lib/features/pets/presentation/screens/pet_detail_screen.dart
 import 'dart:ui';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:go_router/go_router.dart';
+
 import 'package:evcilhayvanmobil/core/http.dart';
 import 'package:evcilhayvanmobil/core/theme/app_palette.dart';
+import 'package:evcilhayvanmobil/features/auth/data/repositories/auth_repository.dart';
+import 'package:evcilhayvanmobil/features/messages/data/repositories/message_repository.dart';
 import 'package:evcilhayvanmobil/features/pets/data/repositories/pets_repository.dart';
 import 'package:evcilhayvanmobil/features/pets/domain/models/pet_model.dart';
-import 'package:evcilhayvanmobil/features/auth/data/repositories/auth_repository.dart';
 
 final petDetailProvider = FutureProvider.autoDispose.family<Pet, String>((ref, petId) {
   final repository = ref.watch(petsRepositoryProvider);
@@ -504,13 +507,13 @@ class _OwnerSection extends StatelessWidget {
   }
 }
 
-class _ActionButtons extends StatelessWidget {
+class _ActionButtons extends ConsumerWidget {
   final Pet pet;
 
   const _ActionButtons({required this.pet});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     return SafeArea(
       minimum: const EdgeInsets.fromLTRB(24, 12, 24, 20),
@@ -537,7 +540,69 @@ class _ActionButtons extends StatelessWidget {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () { /* TODO: Pass */ },
+                  onPressed: () async {
+                    final currentUser = ref.read(authProvider);
+                    final owner = pet.owner;
+
+                    if (currentUser == null) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Sohbet başlatmak için giriş yapmalısınız.'),
+                          ),
+                        );
+                        context.goNamed('login');
+                      }
+                      return;
+                    }
+
+                    if (owner == null) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('İlan sahibine ulaşılamadı.'),
+                          ),
+                        );
+                      }
+                      return;
+                    }
+
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (_) => const Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
+
+                    try {
+                      final repo = ref.read(messageRepositoryProvider);
+                      final conversation = await repo.createOrGetConversation(
+                        participantId: owner.id,
+                        currentUserId: currentUser.id,
+                        relatedPetId: pet.id,
+                      );
+
+                      if (context.mounted) {
+                        Navigator.of(context, rootNavigator: true).pop();
+                        context.pushNamed(
+                          'chat',
+                          pathParameters: {'conversationId': conversation.id},
+                          extra: {
+                            'name': owner.name,
+                            'avatar': owner.avatarUrl,
+                          },
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        Navigator.of(context, rootNavigator: true).pop();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(e.toString())),
+                        );
+                      }
+                    }
+                  },
                   icon: const Icon(Icons.chat_bubble_outline_rounded),
                   label: const Text('Mesaj At'),
                   style: OutlinedButton.styleFrom(
