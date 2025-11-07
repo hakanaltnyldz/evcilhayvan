@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:evcilhayvanmobil/core/http.dart';
 import 'package:evcilhayvanmobil/features/auth/data/repositories/auth_repository.dart';
 import 'package:evcilhayvanmobil/core/theme/app_palette.dart';
 
@@ -13,21 +14,19 @@ class MainShell extends ConsumerStatefulWidget {
 }
 
 class _MainShellState extends ConsumerState<MainShell> {
-  int _selectedIndex = 0;
+  int _selectedIndex = 1;
 
   static const List<String> _routeNames = [
-    'home', // 0: Sahiplen
-    'connect', // 1: Bağlan
-    'create-pet', // 2: Yeniden
+    'messages', // 0: Sohbetler
+    'home', // 1: Sahiplen
+    'connect', // 2: Bağlan
     'mating', // 3: Çiftleştir
     'profile', // 4: Profil
   ];
 
   void _onItemTapped(int index, BuildContext context) {
     final currentUser = ref.read(authProvider);
-    if (index == 2) return;
-
-    if (currentUser == null && (index == 1 || index == 3 || index == 4)) {
+    if (currentUser == null && index != 1) {
       context.goNamed('login');
       return;
     }
@@ -38,16 +37,18 @@ class _MainShellState extends ConsumerState<MainShell> {
   void _updateCurrentIndex(BuildContext context) {
     final String location = GoRouterState.of(context).uri.toString();
 
-    if (location.startsWith('/connect')) {
-      _selectedIndex = 1;
+    if (location.startsWith('/messages')) {
+      _selectedIndex = 0;
+    } else if (location.startsWith('/connect')) {
+      _selectedIndex = 2;
     } else if (location.startsWith('/mating')) {
       _selectedIndex = 3;
     } else if (location.startsWith('/profile')) {
       _selectedIndex = 4;
-    } else if (location == '/') {
-      _selectedIndex = 0;
+    } else if (location == '/' || location.startsWith('/pet')) {
+      _selectedIndex = 1;
     } else {
-      _selectedIndex = 0; // Varsayılan
+      _selectedIndex = 1; // Varsayılan
     }
   }
 
@@ -88,7 +89,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                 ),
               )
             : null,
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
 
         bottomNavigationBar: Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -121,27 +122,33 @@ class _MainShellState extends ConsumerState<MainShell> {
                 showUnselectedLabels: false,
                 selectedItemColor: theme.colorScheme.primary,
                 unselectedItemColor: theme.colorScheme.onSurfaceVariant,
-                items: const <BottomNavigationBarItem>[
+                items: <BottomNavigationBarItem>[
                   BottomNavigationBarItem(
+                    icon: _MessagesNavIcon(
+                      avatarUrl: _resolveAvatarUrl(currentUser?.avatarUrl),
+                    ),
+                    activeIcon: _MessagesNavIcon(
+                      avatarUrl: _resolveAvatarUrl(currentUser?.avatarUrl),
+                      isActive: true,
+                    ),
+                    label: 'Sohbetler',
+                  ),
+                  const BottomNavigationBarItem(
                     icon: Icon(Icons.pets_outlined),
                     activeIcon: Icon(Icons.pets),
                     label: 'Sahiplen',
                   ),
-                  BottomNavigationBarItem(
+                  const BottomNavigationBarItem(
                     icon: Icon(Icons.people_alt_outlined),
                     activeIcon: Icon(Icons.people_alt),
                     label: 'Bağlan',
                   ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.add, color: Colors.transparent),
-                    label: 'Yeniden', // boşluk için
-                  ),
-                  BottomNavigationBarItem(
+                  const BottomNavigationBarItem(
                     icon: Icon(Icons.favorite_border),
                     activeIcon: Icon(Icons.favorite),
                     label: 'Çiftleştir',
                   ),
-                  BottomNavigationBarItem(
+                  const BottomNavigationBarItem(
                     icon: Icon(Icons.person_outline),
                     activeIcon: Icon(Icons.person),
                     label: 'Profil',
@@ -154,4 +161,55 @@ class _MainShellState extends ConsumerState<MainShell> {
       ),
     );
   }
+}
+
+class _MessagesNavIcon extends StatelessWidget {
+  final String? avatarUrl;
+  final bool isActive;
+
+  const _MessagesNavIcon({
+    this.avatarUrl,
+    this.isActive = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    if (avatarUrl == null || avatarUrl!.isEmpty) {
+      return Icon(
+        isActive ? Icons.chat_bubble_rounded : Icons.chat_bubble_outline_rounded,
+      );
+    }
+
+    final borderColor = isActive
+        ? theme.colorScheme.primary.withOpacity(0.8)
+        : theme.colorScheme.primary.withOpacity(0.4);
+
+    return Container(
+      padding: const EdgeInsets.all(2),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: borderColor, width: 2),
+        boxShadow: isActive
+            ? [
+                BoxShadow(
+                  color: theme.colorScheme.primary.withOpacity(0.22),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
+      ),
+      child: CircleAvatar(
+        radius: 14,
+        backgroundImage: NetworkImage(avatarUrl!),
+      ),
+    );
+  }
+}
+
+String? _resolveAvatarUrl(String? path) {
+  if (path == null || path.isEmpty) return null;
+  if (path.startsWith('http')) return path;
+  return '$apiBaseUrl$path';
 }

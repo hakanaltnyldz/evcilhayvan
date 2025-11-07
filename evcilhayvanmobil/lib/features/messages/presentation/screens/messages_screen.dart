@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:evcilhayvanmobil/core/http.dart';
 import 'package:evcilhayvanmobil/core/theme/app_palette.dart';
 import 'package:evcilhayvanmobil/core/widgets/modern_background.dart';
+import 'package:evcilhayvanmobil/features/auth/data/repositories/auth_repository.dart';
 import 'package:evcilhayvanmobil/features/messages/data/repositories/message_repository.dart';
 import 'package:evcilhayvanmobil/features/pets/data/repositories/pets_repository.dart';
 import 'package:evcilhayvanmobil/features/pets/domain/models/pet_model.dart';
@@ -102,12 +103,14 @@ class MessagesScreen extends ConsumerWidget {
   }
 }
 
-class _Header extends StatelessWidget {
+class _Header extends ConsumerWidget {
   const _Header();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final currentUser = ref.watch(authProvider);
+    final avatarUrl = _resolveAvatarUrl(currentUser?.avatarUrl);
     return Container(
       margin: const EdgeInsets.only(bottom: 18),
       padding: const EdgeInsets.all(20),
@@ -148,6 +151,62 @@ class _Header extends StatelessWidget {
                     color: theme.colorScheme.onSurface.withOpacity(0.75),
                   ),
                 ),
+                if (currentUser != null) ...[
+                  const SizedBox(height: 18),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: AppPalette.accentGradient,
+                          ),
+                        ),
+                        child: CircleAvatar(
+                          radius: 22,
+                          backgroundColor:
+                              theme.colorScheme.primary.withOpacity(0.08),
+                          backgroundImage:
+                              avatarUrl != null ? NetworkImage(avatarUrl) : null,
+                          child: avatarUrl == null
+                              ? Text(
+                                  currentUser.name.isNotEmpty
+                                      ? currentUser.name[0].toUpperCase()
+                                      : '?',
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                )
+                              : null,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Merhaba, ${currentUser.name.split(' ').first}',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Sohbetlerin sol alttaki simgeden her zaman erişilebilir.',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color:
+                                    theme.colorScheme.onSurface.withOpacity(0.6),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),

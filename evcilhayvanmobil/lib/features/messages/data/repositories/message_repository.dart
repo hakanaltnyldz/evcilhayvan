@@ -88,11 +88,18 @@ class MessageRepository {
   Future<Conversation> createOrGetConversation({
     required String participantId,
     required String currentUserId,
+    String? relatedPetId,
   }) async {
     try {
+      final payload = {
+        'participantId': participantId,
+        if (relatedPetId != null && relatedPetId.isNotEmpty)
+          'relatedPetId': relatedPetId,
+      };
+
       final response = await _dio.post(
         '/api/conversations',
-        data: {'participantId': participantId},
+        data: payload,
       );
 
       final responseBody = response.data as Map<String, dynamic>;
